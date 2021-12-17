@@ -1,5 +1,5 @@
 # Files and Paths
-DataDirectory = "/"
+DataDirectory = ""
 CredentialsFile = "credentials.json"
 
 # App States
