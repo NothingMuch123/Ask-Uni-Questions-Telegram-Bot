@@ -52,7 +52,8 @@ def AnyTextMessage(m):
     now = time.time()
     if user.PreviousSendTime == None or now > user.PreviousSendTime + SENDING_INTERVAL_MS:
         user.PreviousSendTime = now
-        WriteIntoDB(m.chat.id, m.text)
+        WriteIntoDB(m.chat.id, m.chat.username, m.text)
+        print(f"{m.chat.username} ({m.chat.id}) asked \"{m.text}\"")
         SendMessage(m.chat.id, "Question registered, it'll be answered shortly.")
     else:
         SendMessage(m.chat.id, f"Please wait another {int(user.PreviousSendTime + SENDING_INTERVAL_MS - now)} seconds before asking a question.")

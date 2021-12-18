@@ -34,8 +34,9 @@ class PyMongoObject:
 class Messages(PyMongoObject):
     Collection = None
 
-    def __init__(self, id = None, question = None) -> None:
+    def __init__(self, id = None, username = None, question = None) -> None:
         self.id = id
+        self.username = username
         self.questions = [question]
         self.answered = [""]
         self.banned = False
@@ -52,13 +53,15 @@ def Upsert(filter : dict, m : Messages):
     Messages.Collection.update_one(filter, {"$set":m.ToDict()}, upsert=True)
 
 
-def WriteIntoDB(id, question : str) -> None:
+def WriteIntoDB(id, username, question : str) -> None:
     # Write into DB
     m = Messages.Collection.find_one({"id":id})
     mObj = None
     if m == None:
-        mObj = Messages(id, question)
-    else:
+        mObj = Messages(id, username, question)
+    elif not m["banned"]:
         mObj = Messages().FromDict(m)
         mObj.AddQuestion(question)
+    else:
+        return
     Upsert({"id":id}, mObj)
