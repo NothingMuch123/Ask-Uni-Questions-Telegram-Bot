@@ -1,11 +1,10 @@
 from pymongo import MongoClient
 
 class MongoDB:
-    __connectionString = ""
     DB = None
 
-    def Connect():
-        DB = MongoClient(MongoDB.__connectionString)['Ask_Uni_Questions_Bot']
+    def Connect(connectionString):
+        MongoDB.DB = MongoClient(connectionString)['Ask_Uni_Questions_Bot']
 
 class PyMongoObject:
     def Load(self, dict):
@@ -50,7 +49,7 @@ class Messages(PyMongoObject):
 
 
 def Upsert(filter : dict, m : Messages):
-    Messages.Collection.update_one(filter, {"$set":{m.ToDict()}}, upsert=True)
+    Messages.Collection.update_one(filter, {"$set":m.ToDict()}, upsert=True)
 
 
 def WriteIntoDB(id, question : str) -> None:

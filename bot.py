@@ -22,8 +22,7 @@ credentials = json.load(credentialsFile)
 credentialsFile.close()
 
 # Update MongoDB credentials
-MongoDB.__connectionString = credentials["atlas"]
-MongoDB.Connect()
+MongoDB.Connect(credentials["atlas"])
 Messages.Connect()
 
 # Create bot
@@ -112,7 +111,7 @@ def List_Command(m):
     if user.Role != ROLE_ADMIN:
         return
 
-    user.CurrentChatID = None
+    Reset_Command(m)
     messages = Messages.Collection.find()
     markup = InlineKeyboardMarkup()
     for message in messages:
@@ -125,7 +124,10 @@ def Question_Command(m):
     # Fetch user
     user = FetchUser(m.chat.id)
 
-    if user.Role != ROLE_ADMIN or user.CurrentMessages == None:
+    if user.Role != ROLE_ADMIN:
+        return
+    if user.CurrentMessages == None:
+        SendMessage(user.ID, "No asker selected yet")
         return
 
     markup = InlineKeyboardMarkup()
@@ -143,8 +145,10 @@ def Ban_Command(m):
     # Fetch user
     user = FetchUser(m.chat.id)
 
-    if user.Role != ROLE_ADMIN or user.CurrentMessages == None:
+    if user.Role != ROLE_ADMIN:
         return
+    if user.CurrentMessages == None:
+        SendMessage(user.ID, "No asker selected yet")
 
     user.CurrentMessages.banned = True
     Upsert({"id":user.CurrentChatID}, user.CurrentMessages)
@@ -158,14 +162,14 @@ def Callback(query):
     if user.Role != ROLE_ADMIN:
         return
 
-    if type(query.data) == str and user.CurrentChatID != None:
+    if user.CurrentChatID != None:
         # Question number
         user.CurrentMessageIndex = int(query.data)
         SendMessage(user.ID, f"Question: {user.CurrentMessages.questions[user.CurrentMessageIndex]}\n\nPlease type your answer below.")
         bot.register_next_step_handler_by_chat_id(user.ID, AnsweringQuestion)
     else:
         # Chat ID
-        user.CurrentChatID = query.data
+        user.CurrentChatID = int(query.data)
         m = Messages.Collection.find_one({"id":user.CurrentChatID})
         if m == None:
             SendMessage(user.ID, "No such asker!")
@@ -173,15 +177,22 @@ def Callback(query):
             return
         user.CurrentMessages = Messages().FromDict(m)
         user.CurrentMessageIndex = None
-        SendMessage(user.ID, "User ID Registered")
+        Question_Command(query.message)
+        #SendMessage(user.ID, "User ID Registered")
 
 def AnsweringQuestion(m):
     user = FetchUser(m.chat.id)
-    SendMessage(user.CurrentChatID, m.text)
-    user.CurrentMessages.answered[user.CurrentMessageIndex] = True
+    reply = f"Question: {user.CurrentMessages.questions[user.CurrentMessageIndex]}\n\n"
+    if user.CurrentMessages.answered[user.CurrentMessageIndex] != "":
+        reply += f"Old Answer: {user.CurrentMessages.answered[user.CurrentMessageIndex]}\n\nNew Answer: {m.text}"
+    else:
+        reply += f"Answer: {m.text}"
+    SendMessage(user.CurrentChatID, reply)
+    user.CurrentMessages.answered[user.CurrentMessageIndex] = m.text
     Upsert({"id":user.CurrentChatID}, user.CurrentMessages)
+    SendMessage(user.ID, reply)
     user.CurrentMessageIndex = None
-    SendMessage(user.ID, f"Question: {user.CurrentMessages.questions[user.CurrentMessageIndex]}\n\nAnswer: {m.text}")
+    Question_Command(m)
 
 
 # Start polling for messages
