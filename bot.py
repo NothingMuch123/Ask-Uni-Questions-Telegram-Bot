@@ -40,9 +40,9 @@ def FetchUser(id) -> BotUser:
 
 
 # User Commands
-@bot.message_handler(commands=["start"])
+@bot.message_handler(commands=["start", "help"])
 def Start_Command(m):
-    SendMessage(m.chat.id, "Send your questions in the chat, it'll be answered shortly. Spammers will be ignored.")
+    SendMessage(m.chat.id, "Send your questions in the chat, it'll be answered shortly. Spammers will be ignored.\n\n*All engagements will be kept anonymous.\n*By using this bot, you consent to your data being used for research and analysis purposes.")
 
 # Capture all text messages that are not commands
 @bot.message_handler(func=lambda m : not m.text.startswith("/"), content_types=["text"])
